@@ -25,7 +25,7 @@ channels = [
 	"#spud"
 	]
 	
-modules = []
+modules = { }
 
 debug = 0
 connected = False
@@ -92,7 +92,7 @@ def cmd_privmsg(nick, host, args):
 					botCommands[arg[2:]](nick, host, client, subargs)
 				
 				for module in modules: # Cycle through the modules and let them see if they can do anything with the command
-					module.bot_command(arg[2:], nick, host, client, subargs)
+					modules[module].bot_command(arg[2:], nick, host, client, subargs)
 		elif flag == True:
 			message += " " + arg
 	
@@ -124,9 +124,9 @@ def bot_loadmodule(nick, host, client, args):
 		filename = "modules/" + args[0] + ".py"
 		if os.path.isfile(filename):
 			module = __import__(args[0])
-			modules.append(module)
+			modules[args[0]] = module
 			
-			modules[len(modules) - 1].init()
+			modules[args[0]].init()
 			
 			message = "Module \"" + args[0] + "\" loaded"
 		else:
@@ -138,7 +138,28 @@ def bot_loadmodule(nick, host, client, args):
 		send("PRIVMSG", [nick, (":" + message)])
 	else:
 		send("PRIVMSG", [client, (":" + message)])
+
+def bot_unloadmodule(nick, host, client, args):
+	global modules, connection
+	message = ""
 	
+	if len(args) == 1:
+		if args[0] in modules:
+			modules[args[0]].uninit()
+			p = modules.pop(args[0], None)
+			if p != None:
+				p = None
+			
+			message = "Module \"" + args[0] + "\" unloaded"
+		else:
+			message = "Module \"" + args[0] + "\" is not loaded"
+	else:
+		message = "No module specified"
+		
+	if client == connection["nickname"]:
+		send("PRIVMSG", [nick, (":" + message)])
+	else:
+		send("PRIVMSG", [client, (":" + message)])
 	
 ##
 ## Dictionary of default commands which can be handled
@@ -152,7 +173,8 @@ botCommands = {
 	"random" : bot_random,
 	"killyoself" : bot_quit,
 	"jesusyoself" : bot_restart,
-	"loadmodule" : bot_loadmodule
+	"loadmod" : bot_loadmodule,
+	"unloadmod": bot_unloadmodule
 }
 
 ##
@@ -234,7 +256,7 @@ def run():
 						ircCommands[message[1]](fromNick, fromHost, arguments)
 						
 					for module in modules: # Cycle through the modules and see if they can do anything with the command
-						module.irc_command(message[1], fromNick, fromHost, arguments)
+						modules[module].irc_command(message[1], fromNick, fromHost, arguments)
 				elif debug >= 1:
 					print "> [RCVD] Recieved unknown command: "
 					print ">        " + data

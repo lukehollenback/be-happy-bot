@@ -17,3 +17,7 @@ def bot_command(cmd, nick, host, client, args):
 def irc_command(cmd, fromNick, fromHost, arguments):
 # This is called for every single IRC command that is parsed
 	print "[INFO] I don't know how to cream that"
+	
+def uninit():
+# De-initialize the module
+	print "[INFO] I guess we won't get creamy anymore"
