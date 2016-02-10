@@ -1,23 +1,21 @@
-from globals import *
+from bot import *
 
-def init():
-# Initialize the module when it is loaded
-	print "[INFO] Let's get creamy!"
-	
-def bot_command(cmd, nick, host, client, args):
-# This is called every time a bot command is found in a channel or private message
-	global connection
+## Initialize the module when it is loaded
+def init(bot):
+    print "> [INFO] Let's get creamy!"
 
-	if cmd == "cheese":
-		if client == connection["nickname"]:
-			send("PRIVMSG", [nick, ":Where!!!!"])
-		else:
-			send("PRIVMSG", [client, ":Where!!!!"])
+## This is called every time a bot command is found in a channel or private message
+def bot_command(bot, cmd, nick, host, client, args):
+    if cmd == "cheese":
+        if client == bot.connection["nickname"]:
+            bot.send("PRIVMSG", [nick, ":Where!!!!"])
+        else:
+            bot.send("PRIVMSG", [client, ":Where!!!!"])
 
-def irc_command(cmd, fromNick, fromHost, arguments):
-# This is called for every single IRC command that is parsed
-	print "[INFO] I don't know how to cream that"
-	
-def uninit():
-# De-initialize the module
-	print "[INFO] I guess we won't get creamy anymore"
+## This is called for every single IRC command that is parsed
+def irc_command(bot, cmd, fromNick, fromHost, arguments):
+    print "[INFO] I don't know how to cream that"
+
+## De-initialize the module
+def uninit(bot):
+    print "[INFO] I guess we won't get creamy anymore"
