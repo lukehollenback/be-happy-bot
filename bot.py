@@ -238,7 +238,7 @@ class BeHappyBot:
     ## Handle the !updateyoself bot command
     def bot_update(self, nick, host, client, args):
         # Pull from git
-        call(['git', 'pull'], shell=True)
+        call(['git pull'], shell=True)
 
         # Restart the bot
         self.restart()
