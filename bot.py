@@ -1,7 +1,8 @@
 import os
 import sys
 import socket
-from subprocess import Popen
+from subprocess import Popen, call
+
 
 ##
 ## Add the path for modules
@@ -9,40 +10,105 @@ from subprocess import Popen
 
 sys.path.insert(0, "./modules")
 
+
 ##
 ## BeHappyBot Class
 ##
 
 class BeHappyBot:
+
+    connection = {}
+    channels = []
+    modules = {}
+    irc = None
+
+    debug = 0
+    connected = False
+
     ##
     ## Initial configuration settings
     ## (Todo: Load all of this from a config file)
     ##
 
     def __init__(self):
-        print "[INFO] BeHappyBot initialized"
+        if os.path.isfile("behappy.conf"):
+            self.load_configuration()
+            print "> [INFO] Existing configuration file found and loaded"
+        else:
+            print "> [INFO] No configuration file found (try running BeHappyBot with --makeconf)"
 
-    connection = {
-        "network": "irc.slashnet.org",
-        "port": 6667,
-        "nickname": "BeHappyTest"
-    }
-
-    channels = [
-        "#behappydev",
-        "#spud"
-    ]
-
-    modules = {}
-
-    debug = 0
-    connected = False
-
-    irc = None
+        print "> [INFO] BeHappyBot initialized"
 
     ##
     ## Various functions
     ##
+
+    ## Load the configuration from behappy.conf
+    def load_configuration(self):
+        conf_file = open("behappy.conf", "r")
+
+        data = ""
+        buff = conf_file.read()
+        while buff != "":
+            data += buff
+            buff = conf_file.read()
+
+        data_split = data.split("\n")
+        for line in data_split:
+            line_split = line.split()
+
+            if len(line_split) >= 3:
+                if line_split[0] == "network":
+                    self.connection["network"] = line_split[2]
+                elif line_split[0] == "port":
+                    self.connection["port"] = int(line_split[2])
+                elif line_split[0] == "nickname":
+                    self.connection["nickname"] = line_split[2]
+                elif line_split[0] == "channels":
+                    for channel in line_split[2:]:
+                        if channel not in self.channels:
+                            # Note: I'm not sure why, but each channel will be added to the list twice without this
+                            # check in place...
+                            self.channels.append(channel)
+                elif line_split[0] == "modules":
+                    for module in line_split[2:]:
+                        if module not in self.modules:
+                            # Note: I'm not sure why, but each channel will be added to the list twice without this
+                            # check in place...
+                            self.load_module(module)
+
+        conf_file.close()
+
+    ## Save the current configuration
+    def save_configuration(self):
+        conf_file = open("behappy.conf", "w")
+
+        # Write basic settings
+        conf_file.write("network = " + self.connection["network"] + "\n")
+        conf_file.write("port = " + str(self.connection["port"]) + "\n")
+        conf_file.write("nickname = " + self.connection["nickname"] + "\n")
+
+        # Write currently joined channels
+        joined_channels = ""
+        for channel in self.channels:
+            # If there is more that one channel, delimit them with spaces
+            if joined_channels != "":
+                joined_channels += " "
+
+            joined_channels += channel
+        conf_file.write("channels = " + joined_channels + "\n")
+
+        # Write currently loaded modules
+        loaded_modules = ""
+        for module in self.modules:
+            # If there is more than one module, delimit them with spaces
+            if loaded_modules != "":
+                loaded_modules += " "
+
+            loaded_modules += module
+        conf_file.write("modules = " + loaded_modules)
+
+        conf_file.close()
 
     ## Send a message with the given command and arguments to the IRC server
     def send(self, command, arguments):
@@ -55,8 +121,6 @@ class BeHappyBot:
 
     ## Disconnect from the IRC server
     def disconnect(self):
-        global irc, connected
-
         if self.irc is not None and self.connected is not None:
             self.send("QUIT", [])
             self.irc.close()
@@ -67,15 +131,59 @@ class BeHappyBot:
 
     ## Make sure that we are disconnected from the IRC server, then close the script
     def quit(self):
+        # Save the current configuration
+        self.save_configuration()
+
+        # Allow any loaded modules to unload
+        for module in self.modules:
+            self.modules[module].uninit(self)
+
+        # Disconnect and close
         self.disconnect()
-        sys.exit(0)
+        quit()
 
     ## Make sure that we are disconnected from the IRC server, then open a new instance of the
     ## script, and then close our instance of the script
     def restart(self):
+        # Save the current configuration
+        self.save_configuration()
+
+        # Allow any loaded modules to unload
+        for module in self.modules:
+            self.modules[module].uninit(self)
+
+        # Disconnect, open again, then close
         self.disconnect()
         Popen(['python', 'behappy.py'])
-        sys.exit(0)
+        quit()
+
+    ## Attempt to load a module
+    ## PARAM name: The name of the module to load (e.g. "cheese" for the "cheese.py" module file)
+    ## RETURN: True when successful, False when module does not exist
+    def load_module(self, name):
+        filename = "modules/" + name + ".py"
+        if os.path.isfile(filename):
+            module = __import__(name)
+            self.modules[name] = module
+
+            self.modules[name].init(self)
+
+            return True
+        else:
+            return False
+
+    ## Attempt to unload a loaded module
+    ## PARAM name: The name of the loaded module to unload
+    ## RETURN: True when a loaded module was found and unloaded, False when the specified module is not found to be
+    ##         loaded
+    def unload_module(self, name):
+        if name in self.modules:
+            self.modules[name].uninit(self)
+            self.modules.pop(name, None)
+
+            return True
+        else:
+            return False
 
     ##
     ## Functions for default commands
@@ -90,7 +198,8 @@ class BeHappyBot:
                 flag = True
                 message += " " + arg[1:]
 
-                # This will either be a channel or your nickname (depending on if it is a channel
+                # Get the client that is supposed to receive the PRIVMSG
+                # (Note: This will either be a channel or your nickname depending on if it is a channel
                 # message or a private message)
                 client = args[(args.index(arg) - 1)]
 
@@ -126,18 +235,27 @@ class BeHappyBot:
     def bot_restart(self, nick, host, client, args):
         self.restart()
 
+    ## Handle the !updateyoself bot command
+    def bot_update(self, nick, host, client, args):
+        # Pull from git
+        call(['git', 'pull'], shell=True)
+
+        # Restart the bot
+        self.restart()
+
     ## Handle the !loadmodule [module] bot command
     def bot_loadmodule(self, nick, host, client, args):
         message = ""
 
         if len(args) == 1:
-            filename = "modules/" + args[0] + ".py"
-            if os.path.isfile(filename):
-                module = __import__(args[0])
-                self.modules[args[0]] = module
+            #filename = "modules/" + args[0] + ".py"
+            #if os.path.isfile(filename):
+            #    module = __import__(args[0])
+            #    self.modules[args[0]] = module
+            #
+            #    self.modules[args[0]].init(self)
 
-                self.modules[args[0]].init(self)
-
+            if self.load_module(args[0]):
                 message = "Module \"" + args[0] + "\" loaded"
             else:
                 message = "Module \"" + args[0] + "\" does not exist"
@@ -153,10 +271,11 @@ class BeHappyBot:
         message = ""
 
         if len(args) == 1:
-            if args[0] in self.modules:
-                self.modules[args[0]].uninit(self)
-                self.modules.pop(args[0], None)
+            #if args[0] in self.modules:
+            #    self.modules[args[0]].uninit(self)
+            #    self.modules.pop(args[0], None)
 
+            if self.unload_module(args[0]):
                 message = "Module \"" + args[0] + "\" unloaded"
             else:
                 message = "Module \"" + args[0] + "\" is not loaded"
@@ -180,6 +299,7 @@ class BeHappyBot:
         "random": bot_random,
         "killyoself": bot_quit,
         "jesusyoself": bot_restart,
+        "updateyoself": bot_update,
         "loadmod": bot_loadmodule,
         "unloadmod": bot_unloadmodule
     }
@@ -217,9 +337,9 @@ class BeHappyBot:
             ## potentially contains much more than a single message
             ##
 
-            dataRaw = self.irc.recv(4096)
-            dataSplit = dataRaw.split("\n")
-            for data in dataSplit:
+            data_raw = self.irc.recv(4096)
+            data_split = data_raw.split("\n")
+            for data in data_split:
                 if self.debug >= 2:
                     print data
 
@@ -230,8 +350,8 @@ class BeHappyBot:
                     ## reality, a potentially infinite amount of additional list items
                     ##
 
-                    dataStrip = data.rstrip('\r')  # Some servers don't obey the spec
-                    message = dataStrip.split()
+                    data_strip = data.rstrip('\r')  # Some servers don't obey the spec
+                    message = data_strip.split()
 
                     ##
                     ## Parse the data message
@@ -254,26 +374,26 @@ class BeHappyBot:
                             for channel in self.channels:
                                 self.send("JOIN", [channel])
                     elif len(message) >= 2:
-                        fromNick = message[0][1:]
-                        fromHost = ""
-                        fromHostPos = fromNick.find("!")
-                        if fromHostPos != -1:
-                            fromHost = fromNick[(fromHostPos + 1):]
-                            fromNick = fromNick[0:fromHostPos]
+                        from_nick = message[0][1:]
+                        from_host = ""
+                        from_host_pos = from_nick.find("!")
+                        if from_host_pos != -1:
+                            from_host = from_nick[(from_host_pos + 1):]
+                            from_nick = from_nick[0:from_host_pos]
 
                         arguments = message[2:]
 
                         if self.debug >= 1:
                             print "> [RCVD] Received command " + message[
-                                1] + " from " + fromNick + " at host " + fromHost + "."
+                                1] + " from " + from_nick + " at host " + from_host + "."
 
                         # See if the IRC command is in the list of default IRC commands (not modules)
                         if message[1] in self.ircCommands:
-                            self.ircCommands[message[1]](self, fromNick, fromHost, arguments)
+                            self.ircCommands[message[1]](self, from_nick, from_host, arguments)
 
                         # Cycle through the modules and see if they can do anything with the command
                         for module in self.modules:
-                            self.modules[module].irc_command(self, message[1], fromNick, fromHost, arguments)
+                            self.modules[module].irc_command(self, message[1], from_nick, from_host, arguments)
                     elif self.debug >= 1:
                         print "> [RCVD] Received unknown command: "
                         print ">        " + data
