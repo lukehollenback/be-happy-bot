@@ -16,8 +16,8 @@ if __name__ == "__main__":
             quit()
 
         res = raw_input("What server would you like BeHappyBot to connect to? (e.g. irc.slashnet.org)\n")
-        robot.connection["server"] = str(res) if res != "" else "irc.slashnet.org"
-        res = raw_input("What channel should it connect to " + res + " on? (e.g. 6667)\n")
+        robot.connection["network"] = str(res) if res != "" else "irc.slashnet.org"
+        res = raw_input("What port should it connect to " + res + " on? (e.g. 6667)\n")
         robot.connection["port"] = int(res) if res != "" else 6667
         res = raw_input("What would you like BeHappyBot's nickname to be?\n")
         robot.connection["nickname"] = str(res) if res != "" else "BeHappyBot"

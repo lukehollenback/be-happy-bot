@@ -44,38 +44,43 @@ class BeHappyBot:
 
     ## Load the configuration from behappy.conf
     def load_configuration(self):
-        conf_file = open("behappy.conf", "r")
+        filename = "behappy.conf"
+        if os.path.isfile(filename):
+            conf_file = open(filename, "r")
 
-        data = ""
-        buff = conf_file.read()
-        while buff != "":
-            data += buff
+            data = ""
             buff = conf_file.read()
+            while buff != "":
+                data += buff
+                buff = conf_file.read()
 
-        data_split = data.split("\n")
-        for line in data_split:
-            line_split = line.split()
+            data_split = data.split("\n")
+            for line in data_split:
+                line_split = line.split()
 
-            if len(line_split) >= 3:
-                if line_split[0] == "network":
-                    self.connection["network"] = line_split[2]
-                elif line_split[0] == "port":
-                    self.connection["port"] = int(line_split[2])
-                elif line_split[0] == "nickname":
-                    self.connection["nickname"] = line_split[2]
-                elif line_split[0] == "channels":
-                    for channel in line_split[2:]:
-                        if channel not in self.channels:
-                            # Note: I'm not sure why, but each channel will be added to the list twice without this
-                            # check in place
-                            self.channels.append(channel)
-                elif line_split[0] == "modules":
-                    for module in line_split[2:]:
-                        if module not in self.modules:
-                            # Note: I'm not sure why, but each module will be loaded twice without this check in place
-                            self.load_module(module)
+                if len(line_split) >= 3:
+                    if line_split[0] == "network":
+                        self.connection["network"] = line_split[2]
+                    elif line_split[0] == "port":
+                        self.connection["port"] = int(line_split[2])
+                    elif line_split[0] == "nickname":
+                        self.connection["nickname"] = line_split[2]
+                    elif line_split[0] == "channels":
+                        for channel in line_split[2:]:
+                            if channel not in self.channels:
+                                # Note: I'm not sure why, but each channel will be added to the list twice without this
+                                # check in place
+                                self.channels.append(channel)
+                    elif line_split[0] == "modules":
+                        for module in line_split[2:]:
+                            if module not in self.modules:
+                                # Note: I'm not sure why, but each module will be loaded twice without this check in place
+                                self.load_module(module)
 
-        conf_file.close()
+            conf_file.close()
+        else:
+            print "> [INFO] No configuration file found; Run with --makeconf, or manually create a behappy.conf file"
+            quit()
 
     ## Save the current configuration
     def save_configuration(self):
