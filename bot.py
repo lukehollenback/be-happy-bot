@@ -1,7 +1,7 @@
 import os
 import sys
 import socket
-from subprocess import Popen, call
+from subprocess import Popen, check_output
 
 
 ##
@@ -27,7 +27,6 @@ class BeHappyBot:
 
     ##
     ## Initial configuration settings
-    ## (Todo: Load all of this from a config file)
     ##
 
     def __init__(self):
@@ -68,13 +67,12 @@ class BeHappyBot:
                     for channel in line_split[2:]:
                         if channel not in self.channels:
                             # Note: I'm not sure why, but each channel will be added to the list twice without this
-                            # check in place...
+                            # check in place
                             self.channels.append(channel)
                 elif line_split[0] == "modules":
                     for module in line_split[2:]:
                         if module not in self.modules:
-                            # Note: I'm not sure why, but each channel will be added to the list twice without this
-                            # check in place...
+                            # Note: I'm not sure why, but each module will be loaded twice without this check in place
                             self.load_module(module)
 
         conf_file.close()
@@ -238,7 +236,12 @@ class BeHappyBot:
     ## Handle the !updateyoself bot command
     def bot_update(self, nick, host, client, args):
         # Pull from git
-        call(['git pull'], shell=True)
+        output = check_output(['git', 'pull'])
+        output_split = output.split('\n')
+        for line in output_split:
+            line_strip = line.rstrip('\r').lstrip('\r')  # We should clean up unknown output
+            if line_strip != "":
+                print "> [UPDT] " + line_strip
 
         # Restart the bot
         self.restart()
@@ -248,13 +251,6 @@ class BeHappyBot:
         message = ""
 
         if len(args) == 1:
-            #filename = "modules/" + args[0] + ".py"
-            #if os.path.isfile(filename):
-            #    module = __import__(args[0])
-            #    self.modules[args[0]] = module
-            #
-            #    self.modules[args[0]].init(self)
-
             if self.load_module(args[0]):
                 message = "Module \"" + args[0] + "\" loaded"
             else:
@@ -271,10 +267,6 @@ class BeHappyBot:
         message = ""
 
         if len(args) == 1:
-            #if args[0] in self.modules:
-            #    self.modules[args[0]].uninit(self)
-            #    self.modules.pop(args[0], None)
-
             if self.unload_module(args[0]):
                 message = "Module \"" + args[0] + "\" unloaded"
             else:
@@ -326,7 +318,7 @@ class BeHappyBot:
         self.send("USER", [self.connection["nickname"],
                            self.connection["nickname"],
                            self.connection["nickname"],
-                           ":Python IRC"]
+                           ":BeHappy IRC Bot"]
                   )
 
     ## Run the endless loop which listens for messages from the server and does with them accordingly
