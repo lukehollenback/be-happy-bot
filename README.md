@@ -1,7 +1,7 @@
 # BeHappyBot
 A simple, expandable Python IRC bot.
 
-Written to be simple, yet powerful, BeHappyBot can dynamically load modules written in Python. These modules have exposure to the full power of the IRC protocol, as well as of the bot itself, but use just enough abstraction to allow for quick and simple development.
+Written to be simple, yet powerful, BeHappyBot can dynamically load modules written in Python. These modules have exposure to the full power of the IRC protocol, as well as of the bot itself, but use just enough abstraction to allow for quick and painless development.
 
 ##Installation##
 To install BeHappyBot on a computer, use the following git commands. Doing so will clone the entire repository to the computer, then proceed to change you to the newly-created directory where everything downloaded.
@@ -23,8 +23,10 @@ Assuming that it has been installed and configured correctly, and assuming that 
 
     !updateyoself
 
+This method actually gives all modules a chance to gracefully deinitialize themselves before the bot shuts down and updates. This may be important depending on the modules that are loaded at the time of update.
+
 ###Method Two###
-If you prefer or necessitate a manual update of BeHappyBot, simple run the following command on the directory where you cloned the repository.
+If you prefer or necessitate a manual update of BeHappyBot, simple run the following command on the directory where you cloned the repository. It will update your repository with the latest code.
 
     $ git pull
 
