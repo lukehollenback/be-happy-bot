@@ -16,7 +16,7 @@ def bot_command(robot, cmd, nick, host, client, args):
 
 
 ## This is called for every single IRC command that is parsed
-def irc_command(robot, cmd, fromNick, fromHost, arguments):
+def irc_command(robot, cmd, nick, host, args):
     print "> [INFO] I don't know how to cream that"
 
 
