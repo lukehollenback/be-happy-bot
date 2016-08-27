@@ -6,7 +6,8 @@ def init(robot):
     print "> [INFO] Let's get creamy!"
 
 
-## This is called every time a bot command is found in a channel or private message
+## This is called every time a bot command is found in a channel or private
+## message
 def bot_command(robot, cmd, nick, host, client, args):
     if cmd == "cheese":
         if client == robot.connection["nickname"]:

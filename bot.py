@@ -68,13 +68,15 @@ class BeHappyBot:
                     elif line_split[0] == "channels":
                         for channel in line_split[2:]:
                             if channel not in self.channels:
-                                # Note: I'm not sure why, but each channel will be added to the list twice without this
-                                # check in place
+                                # (NOTE: I'm not sure why, but each channel will
+                                # be added to the list twice without this check
+                                # in place.)
                                 self.channels.append(channel)
                     elif line_split[0] == "modules":
                         for module in line_split[2:]:
                             if module not in self.modules:
-                                # Note: I'm not sure why, but each module will be loaded twice without this check in place
+                                # (NOTE: I'm not sure why, but each module will
+                                # be loaded twice without this check in place.)
                                 self.load_module(module)
 
             conf_file.close()
@@ -132,7 +134,8 @@ class BeHappyBot:
         else:
             print "[INFO] Cannot disconnect from server before being connected to it"
 
-    ## Make sure that we are disconnected from the IRC server, then close the script
+    ## Make sure that we are disconnected from the IRC server, then close the
+    ## script
     def quit(self):
         # Save the current configuration
         self.save_configuration()
@@ -145,8 +148,8 @@ class BeHappyBot:
         self.disconnect()
         quit()
 
-    ## Make sure that we are disconnected from the IRC server, then open a new instance of the
-    ## script, and then close our instance of the script
+    ## Make sure that we are disconnected from the IRC server, then open a new
+    ## instance of the script, and then close our instance of the script
     def restart(self):
         # Save the current configuration
         self.save_configuration()
@@ -161,7 +164,8 @@ class BeHappyBot:
         quit()
 
     ## Attempt to load a module
-    ## PARAM name: The name of the module to load (e.g. "cheese" for the "cheese.py" module file)
+    ## PARAM name: The name of the module to load (e.g. "cheese" for the
+    ##       "cheese.py" module file)
     ## RETURN: True when successful, False when module does not exist
     def load_module(self, name):
         filename = "modules/" + name + ".py"
@@ -177,8 +181,8 @@ class BeHappyBot:
 
     ## Attempt to unload a loaded module
     ## PARAM name: The name of the loaded module to unload
-    ## RETURN: True when a loaded module was found and unloaded, False when the specified module is not found to be
-    ##         loaded
+    ## RETURN: True when a loaded module was found and unloaded, False when the
+    ##         specified module is not found to be loaded
     def unload_module(self, name):
         if name in self.modules:
             self.modules[name].uninit(self)
@@ -202,20 +206,21 @@ class BeHappyBot:
                 message += " " + arg[1:]
 
                 # Get the client that is supposed to receive the PRIVMSG
-                # (Note: This will either be a channel or your nickname depending on if it is a channel
-                # message or a private message)
+                # (NOTE: This will either be a channel or your nickname
+                # depending on if it is a channel message or a private message)
                 client = args[(args.index(arg) - 1)]
 
                 # Check if the message contains a bot command
                 if arg[1] == "!":
                     subargs = args[(args.index(arg) + 1):]
 
-                    # See if the bot command is in the list of default bot commands (not modules)
+                    # See if the bot command is in the list of default bot
+                    # commands (not modules)
                     if arg[2:] in self.botCommands:
                         self.botCommands[arg[2:]](self, nick, host, client, subargs)
 
-                    # Cycle through the modules and let them see if they can do anything with the
-                    # command
+                    # Cycle through the modules and let them see if they can do
+                    # anything with the command
                     for module in self.modules:
                         self.modules[module].bot_command(self, arg[2:], nick, host, client, subargs)
             elif flag is True:
@@ -305,8 +310,8 @@ class BeHappyBot:
     ## Basic runtime functions
     ##
 
-    ## Connect to the IRC server and send initial identification information so that it accepts the
-    ## connection
+    ## Connect to the IRC server and send initial identification information so
+    ## that it accepts the connection
     def connect(self):
         ##
         ## Connect to the IRC server
@@ -326,12 +331,14 @@ class BeHappyBot:
                            ":BeHappy IRC Bot"]
                   )
 
-    ## Run the endless loop which listens for messages from the server and does with them accordingly
+    ## Run the endless loop which listens for messages from the server and does
+    ## with them accordingly
     def run(self):
         while True:
             ##
-            ## Split up the raw data that is received into messages (a.k.a. "data") because it
-            ## potentially contains much more than a single message
+            ## Split up the raw data that is received into messages (a.k.a.
+            ## "data") because it potentially contains much more than a single
+            ## message
             ##
 
             data_raw = self.irc.recv(4096)
@@ -342,9 +349,10 @@ class BeHappyBot:
 
                 if len(data) > 0:
                     ##
-                    ## Parse the data into a list structured like [sender, command, arguments], where,
-                    ## especially sender, will need additional parsing and where arguments is, in
-                    ## reality, a potentially infinite amount of additional list items
+                    ## Parse the data into a list structured like [sender,
+                    ## command, arguments], where, especially sender, will need
+                    ## additional parsing and where arguments is, in reality, a
+                    ## potentially infinite amount of additional list items
                     ##
 
                     data_strip = data.rstrip('\r')  # Some servers don't obey the spec
@@ -352,17 +360,18 @@ class BeHappyBot:
 
                     ##
                     ## Parse the data message
-                    ## (Note: Handle commands that potentially are not headed with a sender first,
-                    ## then break up all other types of messages and try to fire away their appropriate
-                    ## function if possible)
+                    ## (NOTE: Handle commands that potentially are not headed
+                    ## with a sender first, then break up all other types of
+                    ## messages and try to fire away their appropriate function
+                    ## if possible)
                     ##
 
                     if message[0] == "PING":
                         self.send("PONG", [message[1]])
 
                         ##
-                        ## If this is the first PING, confirm the connection is alive and proceed to
-                        ## join the set channel(s)
+                        ## If this is the first PING, confirm the connection is
+                        ## alive and proceed to join the set channel(s)
                         ##
 
                         if not self.connected:
@@ -384,11 +393,13 @@ class BeHappyBot:
                             print "> [RCVD] Received command " + message[
                                 1] + " from " + from_nick + " at host " + from_host + "."
 
-                        # See if the IRC command is in the list of default IRC commands (not modules)
+                        # See if the IRC command is in the list of default IRC
+                        # commands (not modules)
                         if message[1] in self.ircCommands:
                             self.ircCommands[message[1]](self, from_nick, from_host, arguments)
 
-                        # Cycle through the modules and see if they can do anything with the command
+                        # Cycle through the modules and see if they can do
+                        # anything with the command
                         for module in self.modules:
                             self.modules[module].irc_command(self, message[1], from_nick, from_host, arguments)
                     elif self.debug >= 1:
