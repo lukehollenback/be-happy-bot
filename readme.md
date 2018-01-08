@@ -1,4 +1,6 @@
 # BeHappyBot
+![](https://img.shields.io/badge/project%20status-complete-green.svg)
+
 A simple, expandable Python IRC bot.
 
 Written to be simple, yet powerful, BeHappyBot can dynamically load modules written in Python. These modules have exposure to the full power of the IRC protocol, as well as of the bot itself, but use just enough abstraction to allow for quick and painless development.
