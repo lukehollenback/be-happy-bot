@@ -1,4 +1,5 @@
 # BeHappyBot
+
 ![Status: Complete](https://img.shields.io/badge/Status-Complete-green.svg)
 
 A simple, expandable Python IRC bot.
@@ -15,19 +16,25 @@ Assuming that you have Python installed, you can now run BeHappyBot with the fol
 
     $ python BeHappyBot.py
 
-##Updating##
+
+## Updating
+
 Once BeHappyBot is installed, there are two methods to update it.
 
 If you are simply a user of BeHappyBot, rather than a tinkerer or a developer, these will be enough for you. If you are doing more than just running BeHappyBot, however, you should look at the Wiki for more information.
 
-###Method One###
+
+### Method One
+
 Assuming that it has been installed and configured correctly, and assuming that it is connected to an IRC network, simply message it the following command (either in a channel that it is joined to, or in a private message).
 
     !updateyoself
 
 This method actually gives all modules a chance to gracefully deinitialize themselves before the bot shuts down and updates. This may be important depending on the modules that are loaded at the time of update.
 
-###Method Two###
+
+### Method Two
+
 If you prefer or necessitate a manual update of BeHappyBot, simple run the following command on the directory where you cloned the repository. It will update your repository with the latest code.
 
     $ git pull
