@@ -1,6 +1,6 @@
 # BeHappyBot
 
-![Status: Complete](https://img.shields.io/badge/Status-Complete-green.svg)
+<img src="https://img.shields.io/badge/status-Complete-green.svg" alt="Status: Complete"/>
 
 A simple, expandable Python IRC bot.
 
